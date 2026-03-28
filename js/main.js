@@ -1,6 +1,7 @@
 /* ============================================================
    main.js — Portfolio Site
    Sections:
+     0. Typing animation
      1. Sticky navbar
      2. Hamburger menu
      3. Fade-in on scroll (IntersectionObserver)
@@ -10,10 +11,175 @@
      7. Footer year
    ============================================================ */
 
+/* ============================================================
+   0. TYPING ANIMATION
+   Cycles through roles with a typewriter effect.
+   ============================================================ */
 'use strict';
 
 /* ============================================================
-   1. STICKY NAVBAR
+   0. TYPING ANIMATION
+   Cycles through roles with a typewriter effect.
+   ============================================================ */
+(function () {
+  const roles = [
+    'Data/AI Engineer',
+    'Data Scientist',
+    'Data Analyst',
+    'ML Engineer',
+    'LLM Developer',
+    'Deep Learning Engineer',
+  ];
+
+  const TYPE_SPEED   = 70;
+  const DELETE_SPEED = 40;
+  const PAUSE_AFTER  = 1800;
+  const PAUSE_BEFORE = 300;
+
+  let roleIndex = 0;
+  let charIndex = 0;
+  let isDeleting = false;
+
+  function tick() {
+    var el = document.getElementById('typed-role');
+    if (!el) return;
+    var current = roles[roleIndex];
+
+    if (!isDeleting) {
+      charIndex++;
+      el.textContent = current.slice(0, charIndex);
+      if (charIndex === current.length) {
+        isDeleting = true;
+        setTimeout(tick, PAUSE_AFTER);
+      } else {
+        setTimeout(tick, TYPE_SPEED);
+      }
+    } else {
+      charIndex--;
+      el.textContent = current.slice(0, charIndex);
+      if (charIndex === 0) {
+        isDeleting = false;
+        roleIndex  = (roleIndex + 1) % roles.length;
+        setTimeout(tick, PAUSE_BEFORE);
+      } else {
+        setTimeout(tick, DELETE_SPEED);
+      }
+    }
+  }
+
+  setTimeout(tick, 1000);
+}());
+
+/* ============================================================
+   1. EXPERIENCE DETAIL — click a journey card to swap About content
+   ============================================================ */
+(function () {
+  var expData = {
+    ugenome: {
+      title: 'Data/AI Engineer',
+      company: 'UGenome AI',
+      bullets: [
+        'Designed scalable ETL pipelines using Azure Data Factory and SQL to integrate pharmacogenomic datasets, reducing manual preprocessing effort.',
+      'Developed LLM-powered AI agents in Azure AI Foundry using RAG to summarize complex genomic reports for clinical decision-making.',
+      'Implemented Python-based validation frameworks to standardize clinical data and ensure HIPAA/GDPR compliance.',
+      'Collaborated with clinical stakeholders to translate genomic data into deployable AI solutions, driving adoption of data-informed workflows.'      ]
+    },
+    'uoa-intern': {
+      title: 'Data Science Research Intern',
+      company: 'University of Arizona',
+      bullets: [
+        'Identified a 12% rise in incident rates using ARIMA/SARIMA models, enabling proactive safety protocols and intervention strategies.',
+      'Developed LSTM-based time-series models in TensorFlow to capture injury patterns and improve hazard response forecasting.',
+      'Engineered a neural network in PyTorch to predict mill power consumption with 90% accuracy, optimizing energy efficiency.',
+      'Reduced analysis turnaround time by ~30% through interactive dashboards and automated reporting for stakeholders.'      ]
+    },
+    'uoa-researcher': {
+      title: 'Data Science Researcher',
+      company: 'University of Arizona',
+      bullets: [
+        'Engineered a TensorFlow-based CNN for rock image classification, achieving 85% accuracy and reducing manual effort by 40%.',
+      'Developed regression models (Random Forest, Ridge, SVR) for mineral resource estimation, achieving an R² ≈ 0.92.',
+      'Optimized feature engineering using Pearson correlation and mutual information to improve computational efficiency.',
+      'Validated ML predictions against real-world geological interpretations in collaboration with domain experts.'      ]
+    },
+    schneider: {
+      title: 'Data Science Intern',
+      company: 'Schneider Electric',
+      bullets: [
+        'Engineered pump efficiency models using XGBoost and TensorFlow, achieving 96% R² for predictive maintenance.',
+      'Analyzed 3M+ industrial sensor records to uncover inefficiencies, contributing to ~$500K in projected annual energy savings.',
+      'Designed an anomaly detection framework using time-series decomposition to identify early fault patterns.',
+      'Developed real-time Flask and Plotly dashboards, reducing manual reporting effort by 50% for engineering teams.'      ]
+    }
+  };
+
+  var aboutContent = document.querySelector('.about__content');
+  if (!aboutContent) return;
+
+  var originalHTML = aboutContent.innerHTML;
+  var cards = document.querySelectorAll('.journey-card[data-exp]');
+
+  function swapContent(html) {
+    aboutContent.classList.add('exp-fade-out');
+    setTimeout(function () {
+      aboutContent.innerHTML = html;
+      aboutContent.classList.remove('exp-fade-out');
+      aboutContent.classList.add('exp-fade-in');
+      setTimeout(function () { aboutContent.classList.remove('exp-fade-in'); }, 350);
+      var backBtn = aboutContent.querySelector('.exp-back-btn');
+      if (backBtn) backBtn.addEventListener('click', resetAbout);
+    }, 200);
+  }
+
+  function resetAbout() {
+    cards.forEach(function (c) {
+      c.classList.remove('journey-card--active');
+      c.setAttribute('aria-pressed', 'false');
+    });
+    swapContent(originalHTML);
+  }
+
+  cards.forEach(function (card) {
+    card.addEventListener('click', function () {
+      var key = card.dataset.exp;
+      var exp = expData[key];
+      if (!exp) return;
+
+      var isActive = card.classList.contains('journey-card--active');
+      cards.forEach(function (c) {
+        c.classList.remove('journey-card--active');
+        c.setAttribute('aria-pressed', 'false');
+      });
+
+      if (isActive) {
+        resetAbout();
+        return;
+      }
+
+      card.classList.add('journey-card--active');
+      card.setAttribute('aria-pressed', 'true');
+
+      var bullets = exp.bullets.map(function (b) {
+        return '<li>' + b + '</li>';
+      }).join('');
+
+      swapContent(
+        '<div class="section-label">Experience</div>' +
+        '<h2 class="section-heading" id="about-heading">' + exp.title + '<br/><em>' + exp.company + '</em></h2>' +
+        '<ul class="exp-bullets">' + bullets + '</ul>' +
+        '<button class="exp-back-btn">&#8592; Back to About Me</button>'
+      );
+    });
+
+    // Keyboard support
+    card.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); card.click(); }
+    });
+  });
+}());
+
+/* ============================================================
+   2. STICKY NAVBAR
    Adds .scrolled class once the user scrolls past 40px,
    which triggers the frosted-glass background in CSS.
    ============================================================ */
